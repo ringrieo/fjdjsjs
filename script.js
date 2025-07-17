@@ -149,6 +149,98 @@ const questions = [
     answer: 3,
     explanation: "고몬츠키는 문장이 5개 붙은 가장 격식 있는 예복 스타일입니다."
   }
-];
+]
 
-// 나머지 JS 로직은 이어서 압축파일에 포함
+let current = 0;
+let score = 0;
+let timer;
+let timeLeft = 30;
+
+const startBtn = document.getElementById("start-btn");
+const restartBtn = document.getElementById("restart-btn");
+const startScreen = document.getElementById("start-screen");
+const quizScreen = document.getElementById("quiz-screen");
+const resultScreen = document.getElementById("result-screen");
+
+startBtn.onclick = () => {
+  startScreen.classList.remove("active");
+  quizScreen.classList.add("active");
+  showQuestion();
+};
+
+restartBtn.onclick = () => location.reload();
+
+function showQuestion() {
+  if (current >= questions.length) {
+    quizScreen.classList.remove("active");
+    resultScreen.classList.add("active");
+    document.getElementById("score").innerText = `당신의 점수: ${score} / ${questions.length}`;
+    return;
+  }
+
+  const q = questions[current];
+  document.getElementById("question").innerText = q.question;
+  document.getElementById("explanation").innerText = "";
+  const optionsDiv = document.getElementById("options");
+  optionsDiv.innerHTML = "";
+
+  if (q.type === "mc") {
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswer(i, btn);
+      optionsDiv.appendChild(btn);
+    });
+  } else {
+    ["O", "X"].forEach((label, i) => {
+      const btn = document.createElement("button");
+      btn.textContent = label;
+      btn.onclick = () => checkAnswer(i === 0, btn);
+      optionsDiv.appendChild(btn);
+    });
+  }
+
+  timeLeft = 30;
+  document.getElementById("timer").innerText = timeLeft;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").innerText = timeLeft;
+    if (timeLeft === 0) {
+      clearInterval(timer);
+      document.getElementById("explanation").innerText = `시간 초과! 정답: ${formatAnswer(q)}
+${q.explanation}`;
+      setTimeout(() => {
+        current++;
+        showQuestion();
+      }, 3000);
+    }
+  }, 1000);
+}
+
+function checkAnswer(choice, btn) {
+  clearInterval(timer);
+  const q = questions[current];
+  const correct = choice === q.answer;
+
+  if (correct) {
+    btn.classList.add("correct");
+    score++;
+  } else {
+    btn.classList.add("wrong");
+  }
+
+  document.getElementById("explanation").innerText = `${correct ? "정답!" : "오답!"} ${q.explanation}`;
+
+  Array.from(document.getElementById("options").children).forEach(b => b.disabled = true);
+
+  setTimeout(() => {
+    current++;
+    showQuestion();
+  }, 3000);
+}
+
+function formatAnswer(q) {
+  return q.type === "mc" ? q.options[q.answer] : q.answer ? "O" : "X";
+}
+
